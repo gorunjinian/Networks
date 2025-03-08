@@ -1,7 +1,30 @@
-from django import template
-import os
 
+from django import template
 register = template.Library()
+
+
+def percentage_of(value, max_value):
+    """Calculate what percentage of max_value is value"""
+    try:
+        return round((float(value) / float(max_value)) * 100, 2)
+    except (ValueError, ZeroDivisionError):
+        return 0
+
+
+@register.filter
+def endswith(value, arg):
+    """Check if value ends with argument"""
+    return value.endswith(arg)
+from django import template
+register = template.Library()
+
+@register.filter
+def percentage_of(value, max_value):
+    """Calculate what percentage of max_value is value"""
+    try:
+        return min(100, round((float(value) / float(max_value)) * 100))
+    except (ValueError, ZeroDivisionError):
+        return 0
 
 @register.filter
 def filesizeformat(bytes):
@@ -21,14 +44,7 @@ def filesizeformat(bytes):
         return f"{bytes/(1024*1024*1024):.1f} GB"
 
 @register.filter
-def percentage_of(value, max_value):
-    """Calculate what percentage of max_value is value"""
-    try:
-        return min(100, round((float(value) / float(max_value)) * 100))
-    except (ValueError, ZeroDivisionError):
-        return 0
-
-@register.filter
 def endswith(value, arg):
     """Check if value ends with argument"""
     return value.endswith(arg)
+

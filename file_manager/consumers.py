@@ -6,6 +6,11 @@ from django.contrib.auth.models import User
 
 
 class ProgressConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.progress_group_name = None
+        self.user_id = None
+
     async def connect(self):
         self.user_id = self.scope['url_route']['kwargs']['user_id']
         self.progress_group_name = f'progress_{self.user_id}'

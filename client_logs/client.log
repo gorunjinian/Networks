@@ -1,0 +1,5 @@
+2025-03-08 10:15:44,077 - INFO - Client initialized
+2025-03-08 10:16:13,498 - ERROR - Connection timed out: Server at 167.10.10.10:80 is not responding
+2025-03-08 10:16:16,591 - INFO - Requesting file list from server
+2025-03-08 10:16:39,427 - INFO - Client initialized
+2025-03-08 10:16:44,803 - ERROR - Connection refused: Server at localhost:5000 is not running or the port is incorrect
