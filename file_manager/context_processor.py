@@ -4,7 +4,7 @@ def user_context(request):
 
     if request.user.is_authenticated:
         try:
-            is_admin = request.user.profile.is_admin()
+            is_admin = request.user.userprofile.is_admin()
         except:
             is_admin = False
 

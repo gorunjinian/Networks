@@ -108,3 +108,24 @@ class UserProfile(models.Model):
     
     def is_admin(self):
         return self.role == 'admin'
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    storage_quota = models.BigIntegerField(default=104857600)  # 100MB in bytes
+    storage_used = models.BigIntegerField(default=0)
+    role = models.CharField(max_length=20, choices=[
+        ('user', 'Regular User'),
+        ('admin', 'Administrator')
+    ], default='user')
+
+    def __str__(self):
+        return f"{self.user.username}'s profile"
+
+    def is_admin(self):
+        return self.role == 'admin'
+
+    def space_used_percentage(self):
+        if self.storage_quota > 0:
+            return (self.storage_used / self.storage_quota) * 100
+        return 0
