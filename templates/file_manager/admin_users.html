@@ -1,0 +1,86 @@
+{% extends 'file_manager/base.html' %}
+
+{% block title %}Manage Users - File Sharing System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Manage Users</h5>
+                    <div>
+                        <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Storage Used</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for profile in users %}
+                                <tr>
+                                    <td>{{ profile.user.username }}</td>
+                                    <td>{{ profile.user.email }}</td>
+                                    <td>
+                                        {% if profile.role == 'admin' %}
+                                            <span class="badge bg-danger">Administrator</span>
+                                        {% else %}
+                                            <span class="badge bg-primary">User</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ profile.storage_used|filesizeformat }}</td>
+                                    <td>
+                                        {% if profile.user.last_login %}
+                                            {{ profile.user.last_login|date:"M d, Y g:i A" }}
+                                        {% else %}
+                                            Never
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if profile.user != request.user %}
+                                        <form method="post" action="{% url 'change_user_role' profile.user.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <div class="input-group input-group-sm">
+                                                <select name="role" class="form-select form-select-sm" style="max-width: 150px;">
+                                                    <option value="user" {% if profile.role == 'user' %}selected{% endif %}>User</option>
+                                                    <option value="admin" {% if profile.role == 'admin' %}selected{% endif %}>Administrator</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                    Update
+                                                </button>
+                                            </div>
+                                        </form>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Current User</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center">
+                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                        <p class="lead">No users found</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
