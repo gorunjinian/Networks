@@ -48,11 +48,30 @@ class FileClient:
     def connect(self):
         """Connect to the file server"""
         try:
+            if self.socket:
+                try:
+                    self.socket.close()
+                except:
+                    pass
+                self.socket = None
+                
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # Set timeout to prevent indefinite hanging
+            self.socket.settimeout(30)  # 30 seconds timeout for connection
             self.socket.connect((self.host, self.port))
+            # After connection is established, set a longer timeout for operations
+            self.socket.settimeout(300)  # 5 minutes for operations
             self.logger.info(f"Connected to server at {self.host}:{self.port}")
             print(f"Connected to server at {self.host}:{self.port}")
             return True
+        except socket.timeout:
+            self.logger.error(f"Connection timed out: Server at {self.host}:{self.port} is not responding")
+            print(f"Connection timed out: Server at {self.host}:{self.port} is not responding")
+            return False
+        except ConnectionRefusedError:
+            self.logger.error(f"Connection refused: Server at {self.host}:{self.port} is not running or the port is incorrect")
+            print(f"Connection refused: Server at {self.host}:{self.port} is not running or the port is incorrect")
+            return False
         except Exception as e:
             self.logger.error(f"Connection failed: {e}")
             print(f"Connection failed: {e}")
@@ -73,21 +92,51 @@ class FileClient:
             print("Not connected to server")
             return None
         
-        # Send request
-        request = json.dumps(request_data).encode('utf-8')
-        self.socket.sendall(request)
-        self.logger.debug(f"Sent request: {request_data}")
+        # Number of retries for transient errors
+        retries = 2
+        retry_count = 0
         
-        # Receive response
-        response_data = self.socket.recv(4096).decode('utf-8')
-        try:
-            response = json.loads(response_data)
-            self.logger.debug(f"Received response: {response}")
-            return response
-        except json.JSONDecodeError:
-            self.logger.error("Invalid response from server")
-            print("Error: Invalid response from server")
-            return None
+        while retry_count <= retries:
+            try:
+                # Send request
+                request = json.dumps(request_data).encode('utf-8')
+                self.socket.sendall(request)
+                self.logger.debug(f"Sent request: {request_data}")
+                
+                # Receive response
+                response_data = self.socket.recv(4096).decode('utf-8')
+                if not response_data:
+                    raise ConnectionError("Empty response received from server")
+                    
+                try:
+                    response = json.loads(response_data)
+                    self.logger.debug(f"Received response: {response}")
+                    return response
+                except json.JSONDecodeError:
+                    self.logger.error("Invalid response from server")
+                    print("Error: Invalid response from server")
+                    return None
+                    
+            except (socket.timeout, ConnectionError) as e:
+                retry_count += 1
+                if retry_count <= retries:
+                    self.logger.warning(f"Communication error: {e}. Retrying ({retry_count}/{retries})...")
+                    print(f"Communication error. Retrying ({retry_count}/{retries})...")
+                    # Short delay before retry
+                    time.sleep(1)
+                    continue
+                else:
+                    self.logger.error(f"Communication failed after {retries} retries: {e}")
+                    print(f"Error: Communication with server failed after {retries} retries")
+                    # Try to reconnect
+                    self.close()
+                    if self.connect():
+                        print("Reconnected to server. Please try again.")
+                    return None
+            except Exception as e:
+                self.logger.error(f"Unexpected error in communication: {e}")
+                print(f"Error: {e}")
+                return None
     
     def upload_file(self, filepath, handling_mode='overwrite'):
         """
@@ -153,42 +202,62 @@ class FileClient:
         sent = 0
         start_time = time.time()
         
-        with open(filepath, 'rb') as f:
-            while sent < filesize:
-                # Read file in chunks of 4096 bytes
-                chunk = f.read(4096)
-                if not chunk:
-                    break
-                
-                # Send chunk
-                self.socket.sendall(chunk)
-                sent += len(chunk)
-                
-                # Print progress
-                progress = (sent / filesize) * 100
-                elapsed_time = time.time() - start_time
-                speed = sent / (elapsed_time if elapsed_time > 0 else 1)
-                sys.stdout.write(f"\rUploading: {progress:.1f}% - {speed/1024:.1f} KB/s")
-                sys.stdout.flush()
-        
-        print("\nWaiting for server confirmation...")
-        
-        # Get upload confirmation
-        response_data = self.socket.recv(4096).decode('utf-8')
         try:
-            response = json.loads(response_data)
-            if response.get('status') == 'success':
-                self.logger.info(f"File {new_filename} uploaded successfully")
-                print(f"\nFile {new_filename} uploaded successfully!")
-                return True
-            else:
-                error_msg = response.get('message', 'Unknown error')
-                self.logger.error(f"Upload failed: {error_msg}")
-                print(f"\nError: {error_msg}")
+            with open(filepath, 'rb') as f:
+                while sent < filesize:
+                    # Read file in chunks of 4096 bytes
+                    chunk = f.read(4096)
+                    if not chunk:
+                        break
+                    
+                    try:
+                        # Send chunk
+                        self.socket.sendall(chunk)
+                        sent += len(chunk)
+                        
+                        # Print progress
+                        progress = (sent / filesize) * 100
+                        elapsed_time = time.time() - start_time
+                        speed = sent / (elapsed_time if elapsed_time > 0 else 1)
+                        sys.stdout.write(f"\rUploading: {progress:.1f}% - {speed/1024:.1f} KB/s")
+                        sys.stdout.flush()
+                    except socket.timeout:
+                        raise Exception("Upload timed out. Server not responding.")
+                    except socket.error as e:
+                        raise Exception(f"Network error during upload: {e}")
+            
+            print("\nWaiting for server confirmation...")
+            
+            # Get upload confirmation
+            try:
+                response_data = self.socket.recv(4096).decode('utf-8')
+                try:
+                    response = json.loads(response_data)
+                    if response.get('status') == 'success':
+                        self.logger.info(f"File {new_filename} uploaded successfully")
+                        print(f"\nFile {new_filename} uploaded successfully!")
+                        return True
+                    else:
+                        error_msg = response.get('message', 'Unknown error')
+                        self.logger.error(f"Upload failed: {error_msg}")
+                        print(f"\nError: {error_msg}")
+                        return False
+                except json.JSONDecodeError:
+                    self.logger.error("Invalid response from server after upload")
+                    print("\nError: Invalid response from server")
+                    return False
+            except socket.timeout:
+                self.logger.error("Timed out waiting for server confirmation")
+                print("\nError: Timed out waiting for server confirmation. The file may have been uploaded but the confirmation was not received.")
                 return False
-        except json.JSONDecodeError:
-            self.logger.error("Invalid response from server after upload")
-            print("\nError: Invalid response from server")
+            except Exception as e:
+                self.logger.error(f"Error receiving confirmation: {e}")
+                print(f"\nError receiving confirmation: {e}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Upload failed: {e}")
+            print(f"\nUpload failed: {e}")
             return False
     
     def download_file(self, filename):
@@ -230,43 +299,115 @@ class FileClient:
         hash_obj = hashlib.sha256()
         start_time = time.time()
         
-        with open(filepath, 'wb') as f:
-            while received < filesize:
-                # Receive data in chunks
-                chunk = self.socket.recv(min(4096, filesize - received))
-                if not chunk:
-                    break
+        try:
+            with open(filepath, 'wb') as f:
+                last_progress_update = 0
+                while received < filesize:
+                    try:
+                        # Receive data in chunks
+                        chunk = self.socket.recv(min(4096, filesize - received))
+                        if not chunk:
+                            raise Exception("Connection closed during file transfer")
+                        
+                        # Update hash
+                        hash_obj.update(chunk)
+                        
+                        # Write chunk to file
+                        f.write(chunk)
+                        received += len(chunk)
+                        
+                        # Print progress (update every ~1% to avoid console spam)
+                        progress = (received / filesize) * 100
+                        if progress - last_progress_update >= 1 or progress >= 100:
+                            elapsed_time = time.time() - start_time
+                            speed = received / (elapsed_time if elapsed_time > 0 else 1)
+                            sys.stdout.write(f"\rDownloading: {progress:.1f}% - {speed/1024:.1f} KB/s")
+                            sys.stdout.flush()
+                            last_progress_update = progress
+                    except socket.timeout:
+                        remaining = filesize - received
+                        print(f"\nWarning: Download timed out. {received}/{filesize} bytes received ({(received/filesize)*100:.1f}%). Trying to resume...")
+                        
+                        # Try to reconnect and resume
+                        if not self.reconnect_and_resume_download(filename, received):
+                            raise Exception("Failed to resume download after timeout")
+                    except socket.error as e:
+                        raise Exception(f"Network error during download: {e}")
+            
+            print("\nVerifying file integrity...")
+            
+            # Verify file integrity
+            calculated_hash = hash_obj.hexdigest()
+            if calculated_hash == file_hash:
+                self.logger.info(f"File {filename} downloaded successfully")
+                print(f"\nFile {filename} downloaded successfully!")
+                return True
+            else:
+                # Remove corrupted file
+                os.remove(filepath)
+                self.logger.error(f"File corruption detected for {filename}")
+                print("\nError: File corruption detected")
+                print(f"Expected hash: {file_hash}")
+                print(f"Received hash: {calculated_hash}")
+                return False
+        except Exception as e:
+            self.logger.error(f"Download failed: {e}")
+            print(f"\nDownload failed: {e}")
+            
+            # Clean up partial file
+            try:
+                f.close()
+            except:
+                pass
                 
-                # Update hash
-                hash_obj.update(chunk)
+            if os.path.exists(filepath):
+                os.remove(filepath)
                 
-                # Write chunk to file
-                f.write(chunk)
-                received += len(chunk)
-                
-                # Print progress
-                progress = (received / filesize) * 100
-                elapsed_time = time.time() - start_time
-                speed = received / (elapsed_time if elapsed_time > 0 else 1)
-                sys.stdout.write(f"\rDownloading: {progress:.1f}% - {speed/1024:.1f} KB/s")
-                sys.stdout.flush()
-        
-        print("\nVerifying file integrity...")
-        
-        # Verify file integrity
-        calculated_hash = hash_obj.hexdigest()
-        if calculated_hash == file_hash:
-            self.logger.info(f"File {filename} downloaded successfully")
-            print(f"\nFile {filename} downloaded successfully!")
-            return True
-        else:
-            # Remove corrupted file
-            os.remove(filepath)
-            self.logger.error(f"File corruption detected for {filename}")
-            print("\nError: File corruption detected")
-            print(f"Expected hash: {file_hash}")
-            print(f"Received hash: {calculated_hash}")
             return False
+            
+    def reconnect_and_resume_download(self, filename, offset):
+        """
+        Attempt to reconnect to the server and resume a download
+        
+        Args:
+            filename: The name of the file being downloaded
+            offset: The offset to resume from (bytes already received)
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        self.logger.info(f"Attempting to resume download of {filename} from offset {offset}")
+        
+        # Close the existing connection if it exists
+        if self.socket:
+            try:
+                self.socket.close()
+            except:
+                pass
+            self.socket = None
+            
+        # Try to reconnect
+        if not self.connect():
+            self.logger.error("Failed to reconnect to server")
+            return False
+            
+        # Send resume request
+        request = {
+            'command': 'DOWNLOAD',
+            'filename': filename,
+            'resume_offset': offset
+        }
+        
+        response = self.send_request(request)
+        if not response or response.get('status') != 'ready':
+            self.logger.error("Server not ready to resume download")
+            return False
+            
+        # Send ready to receive
+        ready_msg = json.dumps({'status': 'ready'}).encode('utf-8')
+        self.socket.sendall(ready_msg)
+        
+        return True
     
     def list_files(self):
         """List files available on the server"""
@@ -375,6 +516,20 @@ def main():
     # Default settings
     host = 'localhost'
     port = 5000
+    
+    print("\nFile Transfer Client")
+    print("=" * 60)
+    
+    # Allow user to specify server address
+    custom_server = input("Do you want to connect to a custom server? (y/n) [n]: ").lower().strip()
+    if custom_server == 'y':
+        host = input("Enter server hostname or IP [localhost]: ").strip() or 'localhost'
+        try:
+            port_input = input("Enter server port [5000]: ").strip() or '5000'
+            port = int(port_input)
+        except ValueError:
+            print("Invalid port number. Using default port 5000.")
+            port = 5000
     
     # Create client
     client = FileClient(host=host, port=port)
