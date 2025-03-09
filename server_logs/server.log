@@ -12,3 +12,19 @@
 2025-03-08 15:49:44,348 - INFO - Server started on 0.0.0.0:5000
 2025-03-08 15:58:31,617 - INFO - Server initialized
 2025-03-08 15:58:31,621 - INFO - Server started on 0.0.0.0:5000
+2025-03-09 18:07:27,420 - INFO - Server initialized
+2025-03-09 18:07:27,423 - INFO - Server started on 0.0.0.0:5000
+2025-03-09 18:07:58,939 - INFO - New connection from 127.0.0.1:58464
+2025-03-09 18:07:58,940 - INFO - Handling client 127.0.0.1:58464
+2025-03-09 18:07:58,953 - INFO - Received command 'LIST' from 127.0.0.1:58464
+2025-03-09 18:07:58,953 - INFO - List files request from 127.0.0.1:58464
+2025-03-09 18:07:58,954 - INFO - Sent list of 0 files to 127.0.0.1:58464
+2025-03-09 18:08:06,101 - INFO - Received command 'DOWNLOAD' from 127.0.0.1:58464
+2025-03-09 18:08:06,102 - WARNING - Client requested non-existent file: 5
+2025-03-09 18:08:14,995 - INFO - Received command 'LIST' from 127.0.0.1:58464
+2025-03-09 18:08:14,995 - INFO - List files request from 127.0.0.1:58464
+2025-03-09 18:08:14,995 - INFO - Sent list of 0 files to 127.0.0.1:58464
+2025-03-09 18:08:51,804 - INFO - Received command 'LIST' from 127.0.0.1:58464
+2025-03-09 18:08:51,805 - INFO - List files request from 127.0.0.1:58464
+2025-03-09 18:08:51,805 - INFO - Sent list of 0 files to 127.0.0.1:58464
+2025-03-09 18:09:26,863 - INFO - Connection closed with 127.0.0.1:58464

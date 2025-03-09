@@ -4,3 +4,12 @@
 2025-03-08 10:16:39,427 - INFO - Client initialized
 2025-03-08 10:16:44,803 - ERROR - Connection refused: Server at localhost:5000 is not running or the port is incorrect
 2025-03-08 15:58:50,414 - INFO - Client initialized
+2025-03-09 18:07:55,520 - INFO - Client initialized
+2025-03-09 18:07:58,952 - INFO - Connected to server at localhost:5000
+2025-03-09 18:07:58,952 - INFO - Requesting file list from server
+2025-03-09 18:08:06,100 - INFO - Requesting download of 5
+2025-03-09 18:08:06,102 - ERROR - Download failed: File not found: 5
+2025-03-09 18:08:14,993 - INFO - Requesting file list from server
+2025-03-09 18:08:51,804 - INFO - Viewing version history for 2
+2025-03-09 18:08:51,805 - ERROR - File 2 not found
+2025-03-09 18:09:26,859 - INFO - Preparing to upload Camera Roll (4096 bytes), mode: overwrite

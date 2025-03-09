@@ -3,6 +3,9 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User
+from django.conf import settings
+import hmac
+import hashlib
 
 
 class ProgressConsumer(AsyncWebsocketConsumer):
@@ -115,3 +118,18 @@ class ProgressConsumer(AsyncWebsocketConsumer):
             return User.objects.filter(id=user_id).first()
         except Exception:
             return None
+
+    def verify_token(self, user_id, token):
+        """Verify the authenticity of the WebSocket connection token"""
+        if not token:
+            return False
+
+        # Create expected token using HMAC with server secret
+        expected_token = hmac.new(
+            settings.SECRET_KEY.encode(),
+            f"ws_auth_{user_id}".encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        # Constant time comparison to prevent timing attacks
+        return hmac.compare_digest(expected_token, token)

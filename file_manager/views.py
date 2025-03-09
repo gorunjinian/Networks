@@ -113,150 +113,35 @@ def logout_view(request):
 @login_required
 def dashboard(request):
     """Main dashboard view"""
-    # Get the user's files
-    files = FileUpload.objects.filter(uploaded_by=request.user).order_by('-upload_date')
-    
-    # Paginate the files
+    # Check if user is admin
+    is_admin = request.user.profile.is_admin() or request.user.is_superuser
+
+    # Get files - all files for admins, just user's files for regular users
+    if is_admin:
+        files = FileUpload.objects.all().order_by('-upload_date')
+    else:
+        files = FileUpload.objects.filter(uploaded_by=request.user).order_by('-upload_date')
+
+    # Rest of the function remains the same...
     paginator = Paginator(files, 10)  # Show 10 files per page
     page_number = request.GET.get('page')
     files_page = paginator.get_page(page_number)
-    
+
     # Calculate storage usage
     storage_used = files.aggregate(Sum('file_size'))['file_size__sum'] or 0
-    
-    # Check if user is admin
-    is_admin = request.user.profile.is_admin()
-    
-    # If admin, get all users
-    users = None
-    if is_admin:
-        users = UserProfile.objects.all().select_related('user')
-    
+
     # Prepare upload form
     upload_form = FileUploadForm()
-    
+
     context = {
         'files': files_page,
         'upload_form': upload_form,
         'storage_used': storage_used,
         'is_admin': is_admin,
-        'users': users,
+        'users': UserProfile.objects.all().select_related('user') if is_admin else None,
     }
-    
+
     return render(request, 'file_manager/dashboard.html', context)
-
-
-@login_required
-def upload_file(request):
-    """Handle file upload"""
-    if request.method == 'POST':
-        form = FileUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            # Extract file information
-            uploaded_file = request.FILES['file']
-            filename = uploaded_file.name
-            handling_mode = request.POST.get('handling_mode', 'overwrite')
-            
-            # Check if file already exists
-            existing_file = FileUpload.objects.filter(
-                filename=filename,
-                uploaded_by=request.user
-            ).first()
-            
-            if existing_file and handling_mode == 'versioning':
-                # Create a version of the existing file
-                version_num = FileVersion.objects.filter(original_file=existing_file).count() + 1
-                
-                # Create a file version
-                hash_obj = hashlib.sha256()
-                for chunk in existing_file.file.chunks():
-                    hash_obj.update(chunk)
-                
-                FileVersion.objects.create(
-                    original_file=existing_file,
-                    file=existing_file.file,
-                    version=existing_file.version,
-                    file_size=existing_file.file_size,
-                    file_hash=hash_obj.hexdigest(),
-                )
-                
-                # Update existing file with new version
-                existing_file.file = uploaded_file
-                existing_file.original_filename = filename
-                existing_file.version += 1
-                existing_file.status = 'completed'
-                existing_file.save()
-                
-                file_upload = existing_file
-                
-                # Log the version update
-                SystemLogEntry.objects.create(
-                    level="INFO",
-                    action="UPLOAD",
-                    user=request.user,
-                    ip_address=get_client_ip(request),
-                    message=f"User {request.user.username} updated file {filename} to version {existing_file.version}",
-                    file=file_upload
-                )
-                
-            elif existing_file and handling_mode == 'rename':
-                # Auto-rename the file
-                name, ext = os.path.splitext(filename)
-                version = 2
-                while FileUpload.objects.filter(filename=f"{name}_v{version}{ext}", uploaded_by=request.user).exists():
-                    version += 1
-                
-                new_filename = f"{name}_v{version}{ext}"
-                
-                # Create a new file
-                file_upload = form.save(commit=False)
-                file_upload.uploaded_by = request.user
-                file_upload.filename = new_filename
-                file_upload.original_filename = filename
-                file_upload.status = 'completed'
-                file_upload.save()
-                
-                # Log the upload
-                SystemLogEntry.objects.create(
-                    level="INFO",
-                    action="UPLOAD",
-                    user=request.user,
-                    ip_address=get_client_ip(request),
-                    message=f"User {request.user.username} uploaded file {new_filename} (renamed from {filename})",
-                    file=file_upload
-                )
-                
-            else:
-                # Overwrite or no existing file
-                if existing_file:
-                    # Delete existing file
-                    existing_file.delete()
-                    
-                # Create a new file
-                file_upload = form.save(commit=False)
-                file_upload.uploaded_by = request.user
-                file_upload.filename = filename
-                file_upload.original_filename = filename
-                file_upload.status = 'completed'
-                file_upload.save()
-                
-                # Log the upload
-                SystemLogEntry.objects.create(
-                    level="INFO",
-                    action="UPLOAD",
-                    user=request.user,
-                    ip_address=get_client_ip(request),
-                    message=f"User {request.user.username} uploaded file {filename}",
-                    file=file_upload
-                )
-            
-            messages.success(request, f"File {file_upload.filename} uploaded successfully.")
-            return redirect('dashboard')
-        
-        messages.error(request, "Error uploading file. Please try again.")
-    
-    return redirect('dashboard')
-
 
 @login_required
 def download_file(request, file_id):
@@ -287,6 +172,118 @@ def download_file(request, file_id):
     response['Content-Length'] = os.path.getsize(file_path)
     
     return response
+
+
+@login_required
+def upload_file(request):
+    """Handle file upload"""
+    if request.method == 'POST':
+        form = FileUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Extract file information
+            uploaded_file = request.FILES['file']
+            filename = uploaded_file.name
+            handling_mode = request.POST.get('handling_mode', 'overwrite')
+
+            # Check if file already exists
+            existing_file = FileUpload.objects.filter(
+                filename=filename,
+                uploaded_by=request.user
+            ).first()
+
+            if existing_file and handling_mode == 'versioning':
+                # Create a version of the existing file
+                version_num = FileVersion.objects.filter(original_file=existing_file).count() + 1
+
+                # Create a file version
+                hash_obj = hashlib.sha256()
+                for chunk in existing_file.file.chunks():
+                    hash_obj.update(chunk)
+
+                FileVersion.objects.create(
+                    original_file=existing_file,
+                    file=existing_file.file,
+                    version=existing_file.version,
+                    file_size=existing_file.file_size,
+                    file_hash=hash_obj.hexdigest(),
+                )
+
+                # Update existing file with new version
+                existing_file.file = uploaded_file
+                existing_file.original_filename = filename
+                existing_file.version += 1
+                existing_file.status = 'completed'
+                existing_file.save()
+
+                file_upload = existing_file
+
+                # Log the version update
+                SystemLogEntry.objects.create(
+                    level="INFO",
+                    action="UPLOAD",
+                    user=request.user,
+                    ip_address=get_client_ip(request),
+                    message=f"User {request.user.username} updated file {filename} to version {existing_file.version}",
+                    file=file_upload
+                )
+
+            elif existing_file and handling_mode == 'rename':
+                # Auto-rename the file
+                name, ext = os.path.splitext(filename)
+                version = 2
+                while FileUpload.objects.filter(filename=f"{name}_v{version}{ext}", uploaded_by=request.user).exists():
+                    version += 1
+
+                new_filename = f"{name}_v{version}{ext}"
+
+                # Create a new file
+                file_upload = form.save(commit=False)
+                file_upload.uploaded_by = request.user
+                file_upload.filename = new_filename
+                file_upload.original_filename = filename
+                file_upload.status = 'completed'
+                file_upload.save()
+
+                # Log the upload
+                SystemLogEntry.objects.create(
+                    level="INFO",
+                    action="UPLOAD",
+                    user=request.user,
+                    ip_address=get_client_ip(request),
+                    message=f"User {request.user.username} uploaded file {new_filename} (renamed from {filename})",
+                    file=file_upload
+                )
+
+            else:
+                # Overwrite or no existing file
+                if existing_file:
+                    # Delete existing file
+                    existing_file.delete()
+
+                # Create a new file
+                file_upload = form.save(commit=False)
+                file_upload.uploaded_by = request.user
+                file_upload.filename = filename
+                file_upload.original_filename = filename
+                file_upload.status = 'completed'
+                file_upload.save()
+
+                # Log the upload
+                SystemLogEntry.objects.create(
+                    level="INFO",
+                    action="UPLOAD",
+                    user=request.user,
+                    ip_address=get_client_ip(request),
+                    message=f"User {request.user.username} uploaded file {filename}",
+                    file=file_upload
+                )
+
+            messages.success(request, f"File {file_upload.filename} uploaded successfully.")
+            return redirect('dashboard')
+
+        messages.error(request, "Error uploading file. Please try again.")
+
+    return redirect('dashboard')
 
 
 @login_required
@@ -482,3 +479,4 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+

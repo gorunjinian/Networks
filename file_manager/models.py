@@ -92,35 +92,21 @@ class SystemLogEntry(models.Model):
         verbose_name_plural = 'System Log Entries'
 
 
+# file_manager/models.py - Update UserProfile with missing fields
 class UserProfile(models.Model):
     """Extension of the User model to store additional user information"""
     ROLE_CHOICES = (
         ('admin', 'Administrator'),
         ('user', 'Regular User'),
     )
-    
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
     storage_used = models.BigIntegerField(default=0)
-    
+    storage_quota = models.BigIntegerField(default=1073741824)  # 1GB in bytes
+
     def __str__(self):
         return f"{self.user.username} ({self.role})"
-    
-    def is_admin(self):
-        return self.role == 'admin'
-
-
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    storage_quota = models.BigIntegerField(default=104857600)  # 100MB in bytes
-    storage_used = models.BigIntegerField(default=0)
-    role = models.CharField(max_length=20, choices=[
-        ('user', 'Regular User'),
-        ('admin', 'Administrator')
-    ], default='user')
-
-    def __str__(self):
-        return f"{self.user.username}'s profile"
 
     def is_admin(self):
         return self.role == 'admin'
@@ -129,3 +115,7 @@ class Profile(models.Model):
         if self.storage_quota > 0:
             return (self.storage_used / self.storage_quota) * 100
         return 0
+
+    def is_admin(self):
+        # Consider Django superusers as admins in addition to users with admin role
+        return self.role == 'admin' or self.user.is_superuser

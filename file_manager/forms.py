@@ -18,16 +18,16 @@ class CustomUserCreationForm(UserCreationForm):
         self.fields['username'].widget.attrs.update({'class': 'form-control'})
         self.fields['password1'].widget.attrs.update({'class': 'form-control'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control'})
-    
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
-        
+
         if commit:
             user.save()
-            # Create user profile
-            UserProfile.objects.create(user=user, role='user')
-        
+            # Remove this line - let the signal handle profile creation
+            # UserProfile.objects.create(user=user, role='user')
+
         return user
 
 
