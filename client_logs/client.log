@@ -38,3 +38,15 @@
 2025-04-02 11:24:52,757 - INFO - Received list of 1 files from server
 2025-04-02 11:27:44,714 - INFO - Requesting file list from server
 2025-04-02 11:27:44,715 - INFO - Received list of 1 files from server
+2025-04-02 11:47:19,317 - INFO - Client initialized
+2025-04-02 11:47:23,559 - INFO - Connected to server at localhost:5000
+2025-04-02 11:47:36,131 - ERROR - File 6 not found
+2025-04-02 11:47:37,523 - INFO - Connection closed
+2025-04-02 11:48:07,650 - INFO - Client initialized
+2025-04-02 11:48:17,076 - INFO - Connected to server at localhost:5000
+2025-04-02 11:48:17,076 - INFO - Requesting file list from server
+2025-04-02 11:49:01,251 - INFO - Requesting download of 1
+2025-04-02 11:49:01,252 - ERROR - Download failed: File not found: 1
+2025-04-02 11:49:03,220 - INFO - Connection closed
+2025-04-02 12:28:09,753 - INFO - Client initialized
+2025-04-02 12:28:13,981 - INFO - Connected to server at localhost:5000

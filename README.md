@@ -1,460 +1,167 @@
-# TCP File Sharing Application
+# TCP Command-Line File Sharing Application
 
 ## Overview
 
-This application implements a robust client-server file sharing system with a web interface. It allows users to securely transfer files over TCP/IP networks with integrity verification, version control, and real-time progress monitoring.
+This application implements a robust command-line client-server file sharing system using TCP/IP sockets. It allows users to securely transfer files over a network with integrity verification using SHA-256 hashes, options for handling duplicate files, resumable downloads, and detailed logging.
 
 ## Table of Contents
 
-1. [Features](#features)
-2. [Architecture](#architecture)
-3. [Setup and Installation](#setup-and-installation)
-4. [Usage](#usage)
-   - [Command-Line Interface](#command-line-interface)
-   - [Web Interface](#web-interface)
-5. [Protocol Details](#protocol-details)
-6. [File Management](#file-management)
-7. [Security Features](#security-features)
-8. [Logging System](#logging-system)
-9. [Error Handling & Recovery](#error-handling--recovery)
-10. [Implementation Details](#implementation-details)
-11. [Troubleshooting](#troubleshooting)
-12. [Performance Considerations](#performance-considerations)
-13. [Future Enhancements](#future-enhancements)
+1.  [Features](#features)
+2.  [Architecture](#architecture)
+3.  [Setup and Installation](#setup-and-installation)
+4.  [Usage](#usage)
+5.  [Protocol Details](#protocol-details)
+6.  [File Management](#file-management)
+7.  [Logging System](#logging-system)
+8.  [Error Handling & Recovery](#error-handling--recovery)
 
 ## Features
 
-### A. Client-Server Architecture
-- Multi-threaded server that supports concurrent client connections
-- Socket timeouts and connection retry mechanisms for reliability
-- Command-line and web interfaces for user interaction
-
-### B. File Operations
-- **Upload Files**: With progress monitoring and integrity verification
-- **Download Files**: With resumable transfers if interrupted
-- **List Available Files**: With detailed metadata
-- **Version History**: Track and retrieve previous versions of files
-
-### C. Network Communication
-- TCP sockets with timeout handling for reliable data transfer
-- Resilient against network interruptions with auto-reconnect
-- Custom JSON-based request-response protocol with error handling
-- WebSocket integration for real-time progress updates
-
-### D. File Integrity Checking
-- SHA-256 hashing to verify file integrity before and after transfer
-- Automatic corruption detection and cleanup of incomplete transfers
-- Hash verification for both uploads and downloads
-
-### E. File Duplicates Handling
-- **Overwrite**: Replace existing files with new uploads
-- **Auto-rename**: Automatically append version numbers (e.g., filename_v2.txt)
-- **Version History**: Maintain an archive of previous file versions
-
-### F. Logging System
-- Comprehensive server-side and client-side logging
-- Detailed error tracking with timestamps and context information
-- Log rotation to manage log file sizes (5MB with 5 backup files)
-
-### G. Web Interface
-- User authentication with role-based access control
-- Real-time progress monitoring via WebSockets
-- Responsive design for desktop and mobile devices
-- Secure session management
+*   **Client-Server Architecture**: Multi-threaded server supporting concurrent client connections.
+*   **TCP Communication**: Reliable file transfer over TCP sockets with timeout handling.
+*   **File Operations**:
+    *   Upload files with integrity checks.
+    *   Download files with resumable transfers.
+    *   List available files on the server.
+*   **File Integrity**: SHA-256 hashing ensures files are not corrupted during transfer.
+*   **Duplicate File Handling**: Options for `overwrite`, `rename` (e.g., `file_v2.txt`), or `versioning` (archiving previous versions).
+*   **Logging**: Comprehensive server-side and client-side logging to files and console. Includes log rotation.
+*   **Command-Line Interface**: Menu-driven client for easy interaction.
 
 ## Architecture
 
-The application consists of the following components:
+The application consists of the following core components:
 
-### Core Components
-- **Server (`server.py`)**: Handles client connections, file operations, and version management
-- **Client (`client.py`)**: Provides command-line interface for connecting to the server and managing files
-- **Main (`main.py`)**: Entry point that allows choosing between server and client mode
-
-### Web Interface Components
-- **Django Framework**: Provides the web server and MVC architecture
-- **Channels**: Handles WebSocket connections for real-time updates
-- **ASGI Server**: Routes both HTTP and WebSocket traffic
-- **File Manager App**: Implements file operations and user authentication
+*   **Server (`server.py`)**: Handles client connections, processes commands (`UPLOAD`, `DOWNLOAD`, `LIST`), manages file storage (`server_storage/`), and handles versioning (`version_history/`).
+*   **Client (`client.py`)**: Provides a command-line interface (CLI) for connecting to the server, sending commands, and managing local downloads (`client_downloads/`).
+*   **Main (`main.py`)**: A simple entry point script that allows choosing whether to start the server or the client.
 
 ### Directory Structure
+
 ```
 TCP-File-Sharing/
-├── server.py                # Server implementation
-├── client.py                # Command-line client
-├── main.py                  # Application entry point
-├── server_storage/          # Uploaded files storage
-├── version_history/         # Previous file versions
-├── server_logs/             # Server log files
-├── client_logs/             # Client log files
-├── client_downloads/        # Downloaded files
-├── file_sharing_web/        # Django project directory
-│   ├── settings.py          # Django settings
-│   ├── urls.py              # Main URL routing
-│   ├── asgi.py              # ASGI configuration
-│   └── wsgi.py              # WSGI configuration
-└── file_manager/            # Django app for file management
-    ├── views.py             # HTTP request handlers
-    ├── consumers.py         # WebSocket consumers
-    ├── models.py            # Database models
-    ├── urls.py              # App URL routing
-    ├── routing.py           # WebSocket routing
-    └── templates/           # HTML templates
+├── server.py           # Server implementation
+├── client.py           # Command-line client
+├── main.py             # Application entry point
+├── server_storage/     # Server-side storage for uploaded files
+│   └── version_history/ # Archive of previous file versions (when versioning mode is used)
+├── server_logs/        # Server log files
+├── client_downloads/   # Default client download location
+├── client_logs/        # Client log files
+├── requirements.txt    # (Currently empty - no external packages needed)
+└── README.md           # This file
 ```
 
 ## Setup and Installation
 
 ### Prerequisites
-- Python 3.6 or higher
-- pip (Python package manager)
+
+*   Python 3.6 or higher
 
 ### Installation Steps
 
-1. **Clone or download the repository**
-   ```
-   git clone <repository-url>
-   cd tcp-file-sharing
-   ```
+1.  **Clone or download the repository:**
+    ```bash
+    git clone <repository-url>
+    cd TCP-File-Sharing
+    ```
+    (Replace `<repository-url>` with the actual URL of your Git repository if applicable)
 
-2. **Install dependencies**
-   ```
-   pip install -r requirements.txt
-   ```
-
-3. **Configure the application (optional)**
-   - Edit `server.py` to change default host/port (default: 0.0.0.0:5000)
-   - Edit `client.py` to change default connection (default: localhost:5000)
-   - Edit `file_sharing_web/settings.py` for Django configuration
-
-4. **Set up the Django web interface**
-   ```
-   python manage.py makemigrations file_manager
-   python manage.py migrate
-   python manage.py createsuperuser  # Create admin user
-   ```
+2.  **Dependencies:**
+    This project currently uses only standard Python libraries. No external packages need to be installed via `pip`. The `requirements.txt` file is included but is empty.
 
 ### Directory Setup
-The application automatically creates the following directories if they don't exist:
-- `server_storage/` - Storage location for uploaded files
-- `version_history/` - Archive of previous file versions
-- `server_logs/` - Server log files with rotation
-- `client_downloads/` - Default location for downloaded files
-- `client_logs/` - Client-side logging
+
+The application automatically creates the following directories upon first run if they don't exist:
+
+*   `server_storage/`
+*   `server_storage/version_history/`
+*   `server_logs/`
+*   `client_downloads/`
+*   `client_logs/`
+
+### Configuration (Optional)
+
+*   Edit `server.py` to change the default host/port for the server (default: `0.0.0.0:5000`).
+*   Edit `client.py` to change the default server host/port the client tries to connect to (default: `localhost:5000`).
 
 ## Usage
 
-### Command-Line Interface
+You can run the server and client using the `main.py` script or by running `server.py` and `client.py` directly.
 
-#### Running the Server
-```
-python main.py
-# Select option 1 to start the server
-```
-Or directly:
-```
+### Using the Launcher (`main.py`)
+
+1.  Open your terminal or command prompt in the project directory.
+2.  Run the launcher:
+    ```bash
+    python main.py
+    ```
+3.  Follow the on-screen menu:
+    *   Select `1` to start the server.
+    *   Select `2` to start the client.
+    *   Select `3` to exit.
+
+### Running Server Directly
+
+```bash
 python server.py
 ```
+The server will start listening on the configured host and port (default: `0.0.0.0:5000`).
 
-#### Running the Client
-```
-python main.py
-# Select option 2 to start the client
-```
-Or directly:
-```
+### Running Client Directly
+
+```bash
 python client.py
 ```
+The client will start and present a menu for interacting with the server.
 
-#### Client Menu Options
-1. **Connect to server** - Establish connection (with retry capability)
-2. **Upload file** - Send a file with options for handling duplicates
-3. **Download file** - Retrieve a file (with resume capability if interrupted)
-4. **List files** - View available files and metadata
-5. **View file versions** - See version history for specific files
-6. **Exit** - Gracefully close connection and exit
+### Client Menu Options
 
-### Web Interface
-
-#### Starting the Web Server
-```
-python manage.py runserver
-```
-
-#### Accessing the Web Interface
-Open a browser and navigate to `http://localhost:8000/`
-
-#### Web Interface Features
-- **User Authentication**: Register, login, and manage your account
-- **File Upload**: Drag-and-drop or file browser with progress monitoring
-- **File Download**: Download files with integrity verification
-- **File Management**: List, search, and manage your files
-- **Version History**: View and restore previous versions
+1.  **Connect to server**: Establish or re-establish a connection to the server.
+2.  **Upload file**: Select a local file to upload. You will be prompted for how to handle duplicates if the file exists on the server (`overwrite`, `rename`, `versioning`).
+3.  **Download file**: Enter the name of a file on the server to download. Downloads are resumable if interrupted.
+4.  **List files**: View the list of files currently stored on the server.
+5.  **View file versions**: (Note: This client option might exist, but server logic for retrieving specific historical versions may need further implementation based on `PROJECT_FUNCTIONALITY.md`). Check server logs for archived filenames if needed.
+6.  **Disconnect from server**: Close the current connection.
+7.  **Exit**: Disconnect and close the client application.
 
 ## Protocol Details
 
-The application uses a custom JSON-based protocol over TCP:
+The application uses a custom JSON-based protocol over TCP for control messages, followed by raw byte streams for file data.
 
-### Upload Protocol
-1. Client sends: 
-   ```json
-   {
-     "command": "UPLOAD", 
-     "filename": "file.txt", 
-     "filesize": 1024, 
-     "hash": "sha256-hash", 
-     "handling_mode": "overwrite"
-   }
-   ```
-2. Server responds: 
-   ```json
-   {
-     "status": "ready", 
-     "filename": "file.txt", 
-     "is_duplicate": true, 
-     "handling_mode": "overwrite"
-   }
-   ```
-3. Client sends file data in chunks
-4. Server verifies hash and responds: 
-   ```json
-   {
-     "status": "success", 
-     "message": "File uploaded successfully", 
-     "hash": "sha256-hash"
-   }
-   ```
+### Upload Protocol Example
 
-### Download Protocol
-1. Client sends: 
-   ```json
-   {
-     "command": "DOWNLOAD", 
-     "filename": "file.txt"
-   }
-   ```
-   For resuming interrupted downloads:
-   ```json
-   {
-     "command": "DOWNLOAD", 
-     "filename": "file.txt", 
-     "resume_offset": 1024
-   }
-   ```
+1.  Client sends `UPLOAD` command with metadata (filename, size, hash, handling\_mode).
+2.  Server checks for duplicates, potentially archives/renames, and responds with `status: ready` and the final filename.
+3.  Client sends file data in chunks.
+4.  Server receives data, verifies hash, saves the file, and responds with `status: success` or `status: error`.
 
-2. Server responds: 
-   ```json
-   {
-     "status": "ready", 
-     "filesize": 1024, 
-     "hash": "sha256-hash",
-     "resuming_from": 1024  // Only for resumed downloads
-   }
-   ```
-3. Client sends: 
-   ```json
-   {
-     "status": "ready"
-   }
-   ```
-4. Server sends file data (from offset if resuming)
-5. Client verifies hash after receiving complete file
+### Download Protocol Example
 
-### List Protocol
-1. Client sends: 
-   ```json
-   {
-     "command": "LIST"
-   }
-   ```
-2. Server responds: 
-   ```json
-   {
-     "status": "success", 
-     "files": [
-       {
-         "filename": "file1.txt", 
-         "size": 1024, 
-         "modified": "2023-01-01 12:00:00", 
-         "versions": [...]
-       },
-       ...
-     ]
-   }
-   ```
+1.  Client sends `DOWNLOAD` command with filename (and optionally `resume_offset` if resuming).
+2.  Server checks if file exists, gets size/hash, and responds with `status: ready`.
+3.  Server sends file data in chunks (starting from offset if specified).
+4.  Client receives data, saves to a `.part` file, verifies hash upon completion, and renames the file.
 
 ## File Management
 
-### Storage Structure
-- Main files are stored in `server_storage/`
-- Version history is maintained in `version_history/<base_filename>/`
-- Downloaded files are saved to `client_downloads/`
-
-### Version History
-The application maintains meticulous versioning when using the "versioning" mode:
-1. Original files remain in `server_storage/`
-2. Previous versions are stored in `version_history/<base_filename>/`
-3. Version naming follows the pattern: `filename_YYYYMMDD_HHMMSS.ext`
-4. Full metadata is maintained for all versions
-
-### File Integrity
-- All file transfers are verified using SHA-256 hash
-- The hash is calculated before sending and verified after receiving
-- Corrupted transfers are automatically detected and rejected
-- Partial files from interrupted transfers are removed
-
-## Security Features
-
-### Network Security
-- Session-based authentication for the web interface
-- CSRF protection for web forms
-- Content Security Policy headers
-- XSS protection
-
-### Data Security
-- File integrity verification using SHA-256
-- Version history for data recovery
-- Secure file handling with proper cleanup
-
-### Access Control
-- Role-based permissions in the web interface
-- User authentication required for file operations
-- Admin interface for user management
+*   **Server Storage**: Files are stored in the `server_storage/` directory.
+*   **Duplicate Handling**: Controlled by the `handling_mode` parameter during upload (`overwrite`, `rename`, `versioning`).
+    *   `versioning`: Moves the existing file to a timestamped file within `server_storage/version_history/<original_filename>/`.
+*   **Client Downloads**: Files are saved in `client_downloads/`. Partial downloads use a `.part` extension until verified.
 
 ## Logging System
 
-Both client and server maintain detailed logs with the following characteristics:
-
-### Log Categories
-- **INFO**: Normal operations (connections, file transfers)
-- **WARNING**: Non-critical issues (duplicate files, retries)
-- **ERROR**: Critical issues (connection failures, file corruption)
-- **DEBUG**: Detailed debugging information
-
-### Log Structure
-Each log entry includes:
-- Timestamp (ISO 8601 format)
-- Log level
-- Component identifier
-- Detailed message with context
-- Exception details (for errors)
-
-### Log Management
-- Log rotation: 5MB maximum file size
-- Backup count: 5 files
-- Separate logs for server and client
-- Detailed network and file operation tracking
+*   Separate log files for server (`server_logs/server.log`) and client (`client_logs/client.log`).
+*   Logs include timestamps, severity levels, and informative messages about connections, commands, file operations, and errors.
+*   Log rotation is enabled (default: 5MB per file, 5 backup files).
+*   Logs are also output to the console.
 
 ## Error Handling & Recovery
 
-The application includes comprehensive error handling mechanisms:
-
-### Network Errors
-- Socket timeouts with configurable values
-- Connection retry logic with exponential backoff
-- Graceful disconnection handling
-
-### File Transfer Errors
-- Resumable downloads for interrupted transfers
-- Automatic cleanup of partial/corrupted files
-- Hash verification to ensure data integrity
-
-### WebSocket Error Handling
-- Connection authentication validation
-- Ping-pong mechanism for connection health checks
-- Proper error reporting to the client interface
-
-### User Input Validation
-- Comprehensive validation of all user inputs
-- Helpful error messages for invalid inputs
-- Protection against malformed requests
-
-## Implementation Details
-
-### Technology Stack
-- **Core**: Python 3.6+, TCP Sockets
-- **Web Framework**: Django
-- **WebSockets**: Django Channels with ASGI
-- **Data Format**: JSON for communication
-- **Hashing**: SHA-256 for file integrity
-- **Concurrency**: Threading for multi-client support
-
-### Performance Optimizations
-- Chunked file transfers to minimize memory usage
-- Progress monitoring with minimal overhead
-- Efficient file hash calculation
-- Optimized database queries in the web interface
-
-### Resilience Mechanisms
-- Timeout handling for network operations
-- Retries for transient errors
-- Resource cleanup in error scenarios
-- Exception handling at all levels
-
-## Troubleshooting
-
-### Common Issues and Solutions
-
-#### Connection Problems
-- **Issue**: Unable to connect to server
-  - **Solution**: Verify server is running and check firewall settings
-  - **Solution**: Ensure correct host/port configuration
-  - **Solution**: Check for network connectivity issues
-
-#### File Transfer Issues
-- **Issue**: File upload fails
-  - **Solution**: Check available disk space on server
-  - **Solution**: Verify file permissions
-  - **Solution**: Try a different handling mode for duplicates
-
-- **Issue**: Download interruptions
-  - **Solution**: The application will automatically attempt to resume
-  - **Solution**: If resume fails, restart the download
-
-#### Web Interface Issues
-- **Issue**: WebSocket connection fails
-  - **Solution**: Ensure ASGI server is running
-  - **Solution**: Check browser console for error messages
-  - **Solution**: Verify user authentication
-
-#### Permission Issues
-- **Issue**: Access denied errors
-  - **Solution**: Check user account permissions
-  - **Solution**: Verify file ownership and access rights
-
-### Logging for Troubleshooting
-- Check `server_logs/` and `client_logs/` for detailed error information
-- Enable DEBUG logging in Django settings for more verbose web interface logs
-
-## Performance Considerations
-
-### Optimizing for Large Files
-- The application uses chunked transfers to minimize memory usage
-- For very large files (>1GB), consider adjusting the chunk size
-- File hash calculation is optimized to minimize memory footprint
-
-### Network Considerations
-- TCP socket buffer sizes are optimized for typical file transfers
-- Connection timeouts are configurable based on network reliability
-- Progress reporting frequency is balanced for performance
-
-### Concurrent Operations
-- The server can handle multiple clients simultaneously
-- Each client connection runs in a separate thread
-- Database operations are optimized for concurrent access
-
-## Future Enhancements
-
-Potential future improvements could include:
-
-1. End-to-end encryption for enhanced security
-2. Differential sync for bandwidth optimization
-3. Directory/folder synchronization
-4. Mobile application for remote access
-5. Cloud storage integration
-6. Compression options for large files
-7. More advanced search and filtering
-8. Collaborative features such as file sharing and permissions
+*   **Timeouts**: Socket timeouts are used to prevent indefinite blocking during connection and data transfer.
+*   **Connection Errors**: Client attempts to reconnect if communication fails during operations.
+*   **File Integrity**: SHA-256 checks prevent corrupted files from being saved. Partial downloads are cleaned up or resumed.
+*   **Graceful Shutdown**: Server and client attempt to close connections cleanly on exit (e.g., Ctrl+C).
 
 ---
-
-This project provides a robust and flexible file sharing solution suitable for both personal and small-team use. The combination of a reliable TCP protocol, comprehensive error handling, and multiple interface options makes it adaptable to various usage scenarios.

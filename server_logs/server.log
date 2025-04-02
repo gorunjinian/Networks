@@ -61,3 +61,22 @@
 2025-04-02 11:32:44,716 - INFO - Connection closed with 127.0.0.1:54335
 2025-04-02 11:32:44,715 - WARNING - Connection with 127.0.0.1:54335 timed out
 2025-04-02 11:32:44,716 - INFO - Connection closed with 127.0.0.1:54335
+2025-04-02 11:46:17,153 - INFO - Server initialized
+2025-04-02 11:46:17,154 - INFO - Server started on 0.0.0.0:5000
+2025-04-02 11:47:23,539 - INFO - New connection from 127.0.0.1:55038
+2025-04-02 11:47:23,540 - INFO - Handling client 127.0.0.1:55038
+2025-04-02 11:47:37,523 - INFO - Connection closed with 127.0.0.1:55038
+2025-04-02 11:48:17,052 - INFO - New connection from 127.0.0.1:55041
+2025-04-02 11:48:17,052 - INFO - Handling client 127.0.0.1:55041
+2025-04-02 11:48:17,077 - INFO - Received command 'LIST' from 127.0.0.1:55041
+2025-04-02 11:48:17,077 - INFO - List files request from 127.0.0.1:55041
+2025-04-02 11:48:17,078 - INFO - Sent list of 0 files to 127.0.0.1:55041
+2025-04-02 11:49:01,252 - INFO - Received command 'DOWNLOAD' from 127.0.0.1:55041
+2025-04-02 11:49:01,252 - WARNING - Client requested non-existent file: 1
+2025-04-02 11:49:03,220 - INFO - Connection closed with 127.0.0.1:55041
+2025-04-02 12:27:40,252 - INFO - Server initialized
+2025-04-02 12:27:40,253 - INFO - Server started on 0.0.0.0:5000
+2025-04-02 12:28:13,981 - INFO - New connection from 127.0.0.1:55899
+2025-04-02 12:28:13,982 - INFO - Handling client 127.0.0.1:55899
+2025-04-02 12:28:22,793 - ERROR - Socket error with client 127.0.0.1:55899: [WinError 10054] An existing connection was forcibly closed by the remote host
+2025-04-02 12:28:22,794 - INFO - Connection closed with 127.0.0.1:55899
