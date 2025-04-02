@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, Http404
 from django.conf import settings
-from django.db.models import Sum
+from django.db.models import Q, Sum  # Import Q directly
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
@@ -116,19 +116,32 @@ def dashboard(request):
     # Check if user is admin
     is_admin = request.user.profile.is_admin() or request.user.is_superuser
 
-    # Get files - all files for admins, just user's files for regular users
-    if is_admin:
-        files = FileUpload.objects.all().order_by('-upload_date')
-    else:
-        files = FileUpload.objects.filter(uploaded_by=request.user).order_by('-upload_date')
+    try:
+        # Get files based on user type and privacy settings
+        if is_admin:
+            # Admins see all files
+            files = FileUpload.objects.all().order_by('-upload_date')
+        else:
+            # Regular users see their own files and public files from others
+            files = FileUpload.objects.filter(
+                Q(uploaded_by=request.user) | Q(is_public=True)  # Use Q directly
+            ).order_by('-upload_date')
 
-    # Rest of the function remains the same...
-    paginator = Paginator(files, 10)  # Show 10 files per page
-    page_number = request.GET.get('page')
-    files_page = paginator.get_page(page_number)
+        # Paginate files
+        paginator = Paginator(files, 10)  # Show 10 files per page
+        page_number = request.GET.get('page')
+        files_page = paginator.get_page(page_number)
 
-    # Calculate storage usage
-    storage_used = files.aggregate(Sum('file_size'))['file_size__sum'] or 0
+        # Calculate storage usage - only count user's own files
+        user_files = FileUpload.objects.filter(uploaded_by=request.user)
+        storage_used = user_files.aggregate(Sum('file_size'))['file_size__sum'] or 0
+
+    except Exception as e:
+        # Log the error and provide fallback values
+        print(f"Error loading dashboard: {e}")
+        files = FileUpload.objects.none()  # Empty queryset as fallback
+        files_page = Paginator(files, 10).get_page(1)  # Empty first page
+        storage_used = 0
 
     # Prepare upload form
     upload_form = FileUploadForm()
@@ -143,15 +156,18 @@ def dashboard(request):
 
     return render(request, 'file_manager/dashboard.html', context)
 
+
 @login_required
 def download_file(request, file_id):
     """Handle file download"""
     file_upload = get_object_or_404(FileUpload, id=file_id)
-    
+
     # Check if user has access to the file
-    if not (file_upload.uploaded_by == request.user or request.user.profile.is_admin()):
-        raise Http404
-    
+    is_admin = request.user.profile.is_admin() or request.user.is_superuser
+
+    if not (file_upload.uploaded_by == request.user or is_admin or file_upload.is_public):
+        raise Http404("File not found or access denied")
+
     # Log the download
     SystemLogEntry.objects.create(
         level="INFO",
@@ -161,19 +177,20 @@ def download_file(request, file_id):
         message=f"User {request.user.username} downloaded file {file_upload.filename}",
         file=file_upload
     )
-    
+
     # Serve the file
     file_path = file_upload.file.path
     file_wrapper = FileWrapper(open(file_path, 'rb'))
     file_mimetype = mimetypes.guess_type(file_path)[0]
-    
+
     response = HttpResponse(file_wrapper, content_type=file_mimetype)
     response['Content-Disposition'] = f'attachment; filename="{file_upload.original_filename}"'
     response['Content-Length'] = os.path.getsize(file_path)
-    
+
     return response
 
 
+# Update in file_manager/views.py
 @login_required
 def upload_file(request):
     """Handle file upload"""
@@ -184,6 +201,9 @@ def upload_file(request):
             uploaded_file = request.FILES['file']
             filename = uploaded_file.name
             handling_mode = request.POST.get('handling_mode', 'overwrite')
+
+            # Use get() method with a default to avoid KeyError
+            is_public = form.cleaned_data.get('is_public', False)
 
             # Check if file already exists
             existing_file = FileUpload.objects.filter(
@@ -213,6 +233,7 @@ def upload_file(request):
                 existing_file.original_filename = filename
                 existing_file.version += 1
                 existing_file.status = 'completed'
+                existing_file.is_public = is_public  # Update privacy setting
                 existing_file.save()
 
                 file_upload = existing_file
@@ -242,6 +263,7 @@ def upload_file(request):
                 file_upload.filename = new_filename
                 file_upload.original_filename = filename
                 file_upload.status = 'completed'
+                file_upload.is_public = is_public  # Set privacy setting
                 file_upload.save()
 
                 # Log the upload
@@ -266,6 +288,7 @@ def upload_file(request):
                 file_upload.filename = filename
                 file_upload.original_filename = filename
                 file_upload.status = 'completed'
+                file_upload.is_public = is_public  # Set privacy setting
                 file_upload.save()
 
                 # Log the upload
@@ -278,7 +301,8 @@ def upload_file(request):
                     file=file_upload
                 )
 
-            messages.success(request, f"File {file_upload.filename} uploaded successfully.")
+            privacy_status = "public" if is_public else "private"
+            messages.success(request, f"File {file_upload.filename} uploaded successfully as a {privacy_status} file.")
             return redirect('dashboard')
 
         messages.error(request, "Error uploading file. Please try again.")
@@ -290,30 +314,33 @@ def upload_file(request):
 def download_version(request, version_id):
     """Handle file version download"""
     version = get_object_or_404(FileVersion, id=version_id)
-    
+    file_upload = version.original_file
+
     # Check if user has access to the file
-    if not (version.original_file.uploaded_by == request.user or request.user.profile.is_admin()):
-        raise Http404
-    
+    is_admin = request.user.profile.is_admin() or request.user.is_superuser
+
+    if not (file_upload.uploaded_by == request.user or is_admin or file_upload.is_public):
+        raise Http404("File not found or access denied")
+
     # Log the download
     SystemLogEntry.objects.create(
         level="INFO",
         action="DOWNLOAD",
         user=request.user,
         ip_address=get_client_ip(request),
-        message=f"User {request.user.username} downloaded version {version.version} of file {version.original_file.filename}",
-        file=version.original_file
+        message=f"User {request.user.username} downloaded version {version.version} of file {file_upload.filename}",
+        file=file_upload
     )
-    
+
     # Serve the file
     file_path = version.file.path
     file_wrapper = FileWrapper(open(file_path, 'rb'))
     file_mimetype = mimetypes.guess_type(file_path)[0]
-    
+
     response = HttpResponse(file_wrapper, content_type=file_mimetype)
-    response['Content-Disposition'] = f'attachment; filename="{version.original_file.original_filename}"'
+    response['Content-Disposition'] = f'attachment; filename="{file_upload.original_filename}"'
     response['Content-Length'] = os.path.getsize(file_path)
-    
+
     return response
 
 
@@ -321,19 +348,22 @@ def download_version(request, version_id):
 def file_detail(request, file_id):
     """View file details and versions"""
     file_upload = get_object_or_404(FileUpload, id=file_id)
-    
+
     # Check if user has access to the file
-    if not (file_upload.uploaded_by == request.user or request.user.profile.is_admin()):
-        raise Http404
-    
+    is_admin = request.user.profile.is_admin() or request.user.is_superuser
+
+    if not (file_upload.uploaded_by == request.user or is_admin or file_upload.is_public):
+        raise Http404("File not found or access denied")
+
     # Get file versions
     versions = FileVersion.objects.filter(original_file=file_upload).order_by('-version')
-    
+
     context = {
         'file': file_upload,
         'versions': versions,
+        'is_admin': is_admin,
     }
-    
+
     return render(request, 'file_manager/file_detail.html', context)
 
 
@@ -402,6 +432,44 @@ def admin_users(request):
     }
     
     return render(request, 'file_manager/admin_users.html', context)
+
+
+# Add to file_manager/views.py
+@login_required
+def toggle_file_privacy(request, file_id):
+    """Toggle a file's privacy setting"""
+    file_upload = get_object_or_404(FileUpload, id=file_id)
+
+    # Only allow the file owner or admin to change privacy
+    is_admin = request.user.profile.is_admin() or request.user.is_superuser
+
+    if not (file_upload.uploaded_by == request.user or is_admin):
+        messages.error(request, "You don't have permission to change this file's privacy settings.")
+        return redirect('dashboard')
+
+    # Toggle privacy
+    file_upload.is_public = not file_upload.is_public
+    file_upload.save()
+
+    # Log the privacy change
+    privacy_status = "public" if file_upload.is_public else "private"
+    SystemLogEntry.objects.create(
+        level="INFO",
+        action="OTHER",
+        user=request.user,
+        ip_address=get_client_ip(request),
+        message=f"User {request.user.username} changed file {file_upload.filename} to {privacy_status}",
+        file=file_upload
+    )
+
+    messages.success(request, f"File {file_upload.filename} is now {privacy_status}.")
+
+    # Redirect back to the referring page
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    else:
+        return redirect('dashboard')
 
 
 @login_required

@@ -28,3 +28,32 @@
 2025-03-09 18:08:51,805 - INFO - List files request from 127.0.0.1:58464
 2025-03-09 18:08:51,805 - INFO - Sent list of 0 files to 127.0.0.1:58464
 2025-03-09 18:09:26,863 - INFO - Connection closed with 127.0.0.1:58464
+2025-04-02 11:14:46,611 - INFO - Server initialized
+2025-04-02 11:14:46,612 - INFO - Server started on 0.0.0.0:5000
+2025-04-02 11:19:25,495 - INFO - Server initialized
+2025-04-02 11:19:25,496 - INFO - Server started on 0.0.0.0:5000
+2025-04-02 11:20:06,503 - INFO - Server shutting down...
+2025-04-02 11:20:34,290 - INFO - New connection from 127.0.0.1:54309
+2025-04-02 11:20:34,290 - INFO - Handling client 127.0.0.1:54309
+2025-04-02 11:20:34,290 - INFO - Received command 'LIST' from 127.0.0.1:54309
+2025-04-02 11:20:34,291 - INFO - List files request from 127.0.0.1:54309
+2025-04-02 11:20:34,291 - INFO - Sent list of 0 files to 127.0.0.1:54309
+2025-04-02 11:21:11,397 - INFO - Connection closed with 127.0.0.1:54309
+2025-04-02 11:23:33,621 - INFO - New connection from 127.0.0.1:54335
+2025-04-02 11:23:33,621 - INFO - Handling client 127.0.0.1:54335
+2025-04-02 11:24:21,074 - INFO - Received command 'UPLOAD' from 127.0.0.1:54335
+2025-04-02 11:24:21,074 - INFO - Upload request for Visio 2021 Activation.txt (699 bytes) from 127.0.0.1:54335
+2025-04-02 11:24:21,075 - INFO - File Visio 2021 Activation.txt uploaded successfully from 127.0.0.1:54335
+2025-04-02 11:24:27,656 - INFO - New connection from 127.0.0.1:54343
+2025-04-02 11:24:27,656 - INFO - Handling client 127.0.0.1:54343
+2025-04-02 11:24:44,407 - INFO - Received command 'DOWNLOAD' from 127.0.0.1:54343
+2025-04-02 11:24:44,408 - INFO - Download progress for Visio 2021 Activation.txt: 100.0% (14315.5 KB/s)
+2025-04-02 11:24:44,409 - INFO - File Visio 2021 Activation.txt sent successfully. Total: 0.00 MB, Speed: 2.35 MB/s
+2025-04-02 11:24:52,754 - INFO - Received command 'LIST' from 127.0.0.1:54343
+2025-04-02 11:24:52,755 - INFO - List files request from 127.0.0.1:54343
+2025-04-02 11:24:52,756 - INFO - Sent list of 1 files to 127.0.0.1:54343
+2025-04-02 11:27:44,714 - INFO - Received command 'LIST' from 127.0.0.1:54335
+2025-04-02 11:27:44,714 - INFO - List files request from 127.0.0.1:54335
+2025-04-02 11:27:44,715 - INFO - Sent list of 1 files to 127.0.0.1:54335
+2025-04-02 11:29:52,760 - WARNING - Connection with 127.0.0.1:54343 timed out
+2025-04-02 11:29:52,761 - INFO - Connection closed with 127.0.0.1:54343

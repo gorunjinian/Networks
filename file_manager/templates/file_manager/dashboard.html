@@ -89,6 +89,18 @@
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ upload_form.is_public }}
+                                <label class="form-check-label" for="{{ upload_form.is_public.id_for_label }}">
+                                    {{ upload_form.is_public.label }}
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                When public, all users can view and download this file.
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
 
@@ -125,6 +137,7 @@
                                     <th>Version</th>
                                     <th>Uploaded</th>
                                     {% if is_admin %}<th>Uploader</th>{% endif %}
+                                    <th>Privacy</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -144,6 +157,20 @@
                                         </span>
                                     </td>
                                     {% endif %}
+                                    <td>
+                                        {% if file.is_public %}
+                                        <span class="badge bg-success">Public</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Private</span>
+                                        {% endif %}
+
+                                        {% if file.uploaded_by == request.user %}
+                                        <a href="{% url 'toggle_file_privacy' file.id %}" class="btn btn-sm btn-outline-secondary ms-1"
+                                           title="{% if file.is_public %}Make Private{% else %}Make Public{% endif %}">
+                                            <i class="fas {% if file.is_public %}fa-lock{% else %}fa-lock-open{% endif %}"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <div class="btn-group">
                                             <a href="{% url 'download_file' file.id %}" class="btn btn-sm btn-outline-primary">

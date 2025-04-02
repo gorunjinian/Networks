@@ -12,7 +12,7 @@ class FileUpload(models.Model):
         ('completed', 'Completed'),
         ('failed', 'Failed'),
     )
-    
+
     file = models.FileField(upload_to='uploads/')
     filename = models.CharField(max_length=255)
     original_filename = models.CharField(max_length=255)
@@ -22,23 +22,24 @@ class FileUpload(models.Model):
     status = models.CharField(max_length=20, choices=FILE_STATUS_CHOICES, default='uploading')
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploads')
     version = models.IntegerField(default=1)
-    
+    is_public = models.BooleanField(default=False, verbose_name="Public File")  # New field
+
     def save(self, *args, **kwargs):
         # If this is a new file (no ID yet), calculate its hash
         if not self.id and self.file:
             self.file_size = self.file.size
-            
+
             # Calculate file hash
             hash_obj = hashlib.sha256()
             for chunk in self.file.chunks():
                 hash_obj.update(chunk)
             self.file_hash = hash_obj.hexdigest()
-        
+
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f"{self.filename} (v{self.version})"
-    
+
     class Meta:
         ordering = ['-upload_date']
 

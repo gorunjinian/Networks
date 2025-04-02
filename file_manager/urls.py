@@ -12,6 +12,7 @@ urlpatterns = [
     path('download-version/<int:version_id>/', views.download_version, name='download_version'),
     path('file/<int:file_id>/', views.file_detail, name='file_detail'),
     path('delete/<int:file_id>/', views.delete_file, name='delete_file'),
+    path('toggle-privacy/<int:file_id>/', views.toggle_file_privacy, name='toggle_file_privacy'),  # New URL
     path('manage/logs/', views.admin_logs, name='admin_logs'),
     path('manage/users/', views.admin_users, name='admin_users'),
     path('manage/users/change-role/<int:user_id>/', views.change_user_role, name='change_user_role'),
