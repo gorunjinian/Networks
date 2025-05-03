@@ -61,3 +61,18 @@
 2025-04-02 11:32:44,716 - INFO - Connection closed with 127.0.0.1:54335
 2025-04-02 11:32:44,715 - WARNING - Connection with 127.0.0.1:54335 timed out
 2025-04-02 11:32:44,716 - INFO - Connection closed with 127.0.0.1:54335
+2025-05-03 09:03:55,769 - INFO - Server initialized
+2025-05-03 09:03:55,770 - INFO - Server started on 0.0.0.0:5000
+2025-05-03 09:04:24,780 - INFO - New connection from 127.0.0.1:64459
+2025-05-03 09:04:24,781 - INFO - Handling client 127.0.0.1:64459
+2025-05-03 09:05:25,490 - INFO - Connection closed with 127.0.0.1:64459
+2025-05-03 09:06:08,948 - INFO - New connection from 127.0.0.1:64486
+2025-05-03 09:06:08,948 - INFO - Handling client 127.0.0.1:64486
+2025-05-03 09:06:39,252 - INFO - Received command 'UPLOAD' from 127.0.0.1:64486
+2025-05-03 09:06:39,253 - INFO - Upload request for README.md (14966 bytes) from 127.0.0.1:64486
+2025-05-03 09:06:39,255 - INFO - File README.md uploaded successfully from 127.0.0.1:64486
+2025-05-03 09:06:52,324 - INFO - Received command 'LIST' from 127.0.0.1:64486
+2025-05-03 09:06:52,325 - INFO - List files request from 127.0.0.1:64486
+2025-05-03 09:06:52,326 - INFO - Sent list of 1 files to 127.0.0.1:64486
+2025-05-03 09:11:52,341 - WARNING - Connection with 127.0.0.1:64486 timed out
+2025-05-03 09:11:52,342 - INFO - Connection closed with 127.0.0.1:64486

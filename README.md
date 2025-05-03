@@ -10,8 +10,8 @@ This application implements a robust client-server file sharing system with a we
 2. [Architecture](#architecture)
 3. [Setup and Installation](#setup-and-installation)
 4. [Usage](#usage)
-   - [Command-Line Interface](#command-line-interface)
-   - [Web Interface](#web-interface)
+    - [Command-Line Interface](#command-line-interface)
+    - [Web Interface](#web-interface)
 5. [Protocol Details](#protocol-details)
 6. [File Management](#file-management)
 7. [Security Features](#security-features)
@@ -110,28 +110,43 @@ TCP-File-Sharing/
 
 ### Installation Steps
 
-1. **Clone or download the repository**
-   ```
-   git clone <repository-url>
-   cd tcp-file-sharing
-   ```
-
-2. **Install dependencies**
+1. **Install dependencies**
    ```
    pip install -r requirements.txt
    ```
 
-3. **Configure the application (optional)**
-   - Edit `server.py` to change default host/port (default: 0.0.0.0:5000)
-   - Edit `client.py` to change default connection (default: localhost:5000)
-   - Edit `file_sharing_web/settings.py` for Django configuration
+2. **Configure the application (optional)**
+    - Edit `server.py` to change default host/port (default: 0.0.0.0:5000)
+    - Edit `client.py` to change default connection (default: localhost:5000)
+    - Edit `file_sharing_web/settings.py` for Django configuration
 
-4. **Set up the Django web interface**
+3. **Set up the Django web interface**
+
+   First, create and activate a virtual environment:
    ```
+   # Create a virtual environment
+   python -m venv venv
+   
+   # Activate the virtual environment
+   # On Windows
+   venv\Scripts\activate
+   
+   # On macOS and Linux
+   source venv/bin/activate
+   ```
+
+   Then, install dependencies and set up Django:
+   ```
+   # Install dependencies within the virtual environment
+   pip install -r requirements.txt
+   
+   # Set up the Django database
    python manage.py makemigrations file_manager
    python manage.py migrate
    python manage.py createsuperuser  # Create admin user
    ```
+
+   Note: Always ensure the virtual environment is activated when running the Django web interface.
 
 ### Directory Setup
 The application automatically creates the following directories if they don't exist:
@@ -177,6 +192,7 @@ python client.py
 
 #### Starting the Web Server
 ```
+# Ensure the virtual environment is activated
 python manage.py runserver
 ```
 
@@ -195,7 +211,7 @@ Open a browser and navigate to `http://localhost:8000/`
 The application uses a custom JSON-based protocol over TCP:
 
 ### Upload Protocol
-1. Client sends: 
+1. Client sends:
    ```json
    {
      "command": "UPLOAD", 
@@ -205,7 +221,7 @@ The application uses a custom JSON-based protocol over TCP:
      "handling_mode": "overwrite"
    }
    ```
-2. Server responds: 
+2. Server responds:
    ```json
    {
      "status": "ready", 
@@ -215,7 +231,7 @@ The application uses a custom JSON-based protocol over TCP:
    }
    ```
 3. Client sends file data in chunks
-4. Server verifies hash and responds: 
+4. Server verifies hash and responds:
    ```json
    {
      "status": "success", 
@@ -225,7 +241,7 @@ The application uses a custom JSON-based protocol over TCP:
    ```
 
 ### Download Protocol
-1. Client sends: 
+1. Client sends:
    ```json
    {
      "command": "DOWNLOAD", 
@@ -241,7 +257,7 @@ The application uses a custom JSON-based protocol over TCP:
    }
    ```
 
-2. Server responds: 
+2. Server responds:
    ```json
    {
      "status": "ready", 
@@ -250,7 +266,7 @@ The application uses a custom JSON-based protocol over TCP:
      "resuming_from": 1024  // Only for resumed downloads
    }
    ```
-3. Client sends: 
+3. Client sends:
    ```json
    {
      "status": "ready"
@@ -260,13 +276,13 @@ The application uses a custom JSON-based protocol over TCP:
 5. Client verifies hash after receiving complete file
 
 ### List Protocol
-1. Client sends: 
+1. Client sends:
    ```json
    {
      "command": "LIST"
    }
    ```
-2. Server responds: 
+2. Server responds:
    ```json
    {
      "status": "success", 
@@ -396,30 +412,30 @@ The application includes comprehensive error handling mechanisms:
 
 #### Connection Problems
 - **Issue**: Unable to connect to server
-  - **Solution**: Verify server is running and check firewall settings
-  - **Solution**: Ensure correct host/port configuration
-  - **Solution**: Check for network connectivity issues
+    - **Solution**: Verify server is running and check firewall settings
+    - **Solution**: Ensure correct host/port configuration
+    - **Solution**: Check for network connectivity issues
 
 #### File Transfer Issues
 - **Issue**: File upload fails
-  - **Solution**: Check available disk space on server
-  - **Solution**: Verify file permissions
-  - **Solution**: Try a different handling mode for duplicates
+    - **Solution**: Check available disk space on server
+    - **Solution**: Verify file permissions
+    - **Solution**: Try a different handling mode for duplicates
 
 - **Issue**: Download interruptions
-  - **Solution**: The application will automatically attempt to resume
-  - **Solution**: If resume fails, restart the download
+    - **Solution**: The application will automatically attempt to resume
+    - **Solution**: If resume fails, restart the download
 
 #### Web Interface Issues
 - **Issue**: WebSocket connection fails
-  - **Solution**: Ensure ASGI server is running
-  - **Solution**: Check browser console for error messages
-  - **Solution**: Verify user authentication
+    - **Solution**: Ensure ASGI server is running
+    - **Solution**: Check browser console for error messages
+    - **Solution**: Verify user authentication
 
 #### Permission Issues
 - **Issue**: Access denied errors
-  - **Solution**: Check user account permissions
-  - **Solution**: Verify file ownership and access rights
+    - **Solution**: Check user account permissions
+    - **Solution**: Verify file ownership and access rights
 
 ### Logging for Troubleshooting
 - Check `server_logs/` and `client_logs/` for detailed error information

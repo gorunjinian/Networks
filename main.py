@@ -4,10 +4,8 @@ TCP File Transfer Application
 Run this script to choose between starting a server or client.
 """
 
-import os
 import sys
 from server import FileServer
-from client import FileClient
 
 
 def print_header():

@@ -1,40 +1,9 @@
-2025-03-08 10:15:44,077 - INFO - Client initialized
-2025-03-08 10:16:13,498 - ERROR - Connection timed out: Server at 167.10.10.10:80 is not responding
-2025-03-08 10:16:16,591 - INFO - Requesting file list from server
-2025-03-08 10:16:39,427 - INFO - Client initialized
-2025-03-08 10:16:44,803 - ERROR - Connection refused: Server at localhost:5000 is not running or the port is incorrect
-2025-03-08 15:58:50,414 - INFO - Client initialized
-2025-03-09 18:07:55,520 - INFO - Client initialized
-2025-03-09 18:07:58,952 - INFO - Connected to server at localhost:5000
-2025-03-09 18:07:58,952 - INFO - Requesting file list from server
-2025-03-09 18:08:06,100 - INFO - Requesting download of 5
-2025-03-09 18:08:06,102 - ERROR - Download failed: File not found: 5
-2025-03-09 18:08:14,993 - INFO - Requesting file list from server
-2025-03-09 18:08:51,804 - INFO - Viewing version history for 2
-2025-03-09 18:08:51,805 - ERROR - File 2 not found
-2025-03-09 18:09:26,859 - INFO - Preparing to upload Camera Roll (4096 bytes), mode: overwrite
-2025-04-02 11:17:05,925 - INFO - Client initialized
-2025-04-02 11:17:27,080 - ERROR - Connection failed: [WinError 10049] The requested address is not valid in its context
-2025-04-02 11:20:02,248 - INFO - Client initialized
-2025-04-02 11:20:06,503 - INFO - Connected to server at localhost:5000
-2025-04-02 11:20:25,077 - INFO - Client initialized
-2025-04-02 11:20:34,289 - INFO - Connected to server at localhost:5000
-2025-04-02 11:20:34,290 - INFO - Requesting file list from server
-2025-04-02 11:21:11,384 - INFO - Preparing to upload Text Documents (4096 bytes), mode: overwrite
-2025-04-02 11:23:30,929 - INFO - Client initialized
-2025-04-02 11:23:33,645 - INFO - Connected to server at localhost:5000
-2025-04-02 11:24:02,311 - ERROR - File "C:\Users\gorun\Documents\Text Documents\Visio 2021 Activation.txt" not found
-2025-04-02 11:24:21,072 - INFO - Preparing to upload Visio 2021 Activation.txt (699 bytes), mode: overwrite
-2025-04-02 11:24:21,075 - INFO - File Visio 2021 Activation.txt uploaded successfully
-2025-04-02 11:24:25,653 - INFO - Requesting file list from server
-2025-04-02 11:24:25,653 - WARNING - Communication error: [WinError 10054] An existing connection was forcibly closed by the remote host. Retrying (1/2)...
-2025-04-02 11:24:26,654 - WARNING - Communication error: [WinError 10054] An existing connection was forcibly closed by the remote host. Retrying (2/2)...
-2025-04-02 11:24:27,655 - ERROR - Communication failed after 2 retries: [WinError 10054] An existing connection was forcibly closed by the remote host
-2025-04-02 11:24:27,655 - INFO - Connection closed
-2025-04-02 11:24:27,656 - INFO - Connected to server at localhost:5000
-2025-04-02 11:24:44,407 - INFO - Requesting download of Visio 2021 Activation.txt
-2025-04-02 11:24:44,409 - INFO - File Visio 2021 Activation.txt downloaded successfully
-2025-04-02 11:24:52,754 - INFO - Requesting file list from server
-2025-04-02 11:24:52,757 - INFO - Received list of 1 files from server
-2025-04-02 11:27:44,714 - INFO - Requesting file list from server
-2025-04-02 11:27:44,715 - INFO - Received list of 1 files from server
+2025-05-03 09:04:19,352 - INFO - Client initialized
+2025-05-03 09:04:24,780 - INFO - Connected to server at localhost:5000
+2025-05-03 09:05:25,475 - INFO - Preparing to upload Networks (8192 bytes), mode: overwrite
+2025-05-03 09:06:06,336 - INFO - Client initialized
+2025-05-03 09:06:08,948 - INFO - Connected to server at localhost:5000
+2025-05-03 09:06:39,218 - INFO - Preparing to upload README.md (14966 bytes), mode: overwrite
+2025-05-03 09:06:39,255 - INFO - File README.md uploaded successfully
+2025-05-03 09:06:52,323 - INFO - Requesting file list from server
+2025-05-03 09:06:52,328 - INFO - Received list of 1 files from server
